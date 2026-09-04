@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapeamento Lojas - Panelão Supermercados</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-box h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .login-btn:hover {
+            background: #764ba2;
+        }
+
+        .app-container {
+            min-height: 100vh;
+            background: #f5f5f5;
+        }
+
+        .app-header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .app-header h1 {
+            color: #667eea;
+            font-size: 24px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 14px;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #ff5252;
+        }
+
+        .app-content {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .admin-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .lojas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .loja-card {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+
+        .loja-card:hover {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            border-color: #667eea;
+        }
+
+        .loja-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            background: #667eea;
+            padding: 15px;
+            margin: 0;
+        }
+
+        .categorias-list {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .categoria-item {
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .categoria-item:hover {
+            background: #f0f0f0;
+        }
+
+        .categoria-name {
+            font-weight: 500;
+            font-size: 13px;
+            flex: 1;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .status-ok {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-expired {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .photo-display {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .photo-display img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .photo-info {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+
+        .photo-info p {
+            margin: 5px 0;
+        }
+
+        .no-photo {
+            padding: 30px;
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+        }
+
+        .upload-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 2px dashed #ddd;
+        }
+
+        .upload-label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .upload-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+            font-size: 14px;
+        }
+
+        .upload-btn:hover {
+            background: #764ba2;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .lojas-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .app-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .login-box {
+                padding: 30px 20px;
+            }
+
+            .categorias-list {
+                max-height: 300px;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+const LOJAS = [
+    'Loja 01 - Bauru', 'Loja 02 - Bauru', 'Loja 03 - Agudos',
+    'Loja 04 - Jaú', 'Loja 05 - Botucatu', 'Loja 06 - Lençóis Paulista',
+    'Loja 07 - Duartina', 'Loja 08 - São Manoel', 'Loja 09 - Bauru',
+    'Loja 10 - Agudos', 'Loja 11 - Jaú', 'Loja 12 - Botucatu',
+    'Loja 13 - Lençóis Paulista'
+];
+
+const CATEGORIAS = [
+    'Suco', 'Bebida Quente', 'Bebida Mista', 'Vinhos', 'Espum./Sidra/Sazonal',
+    'Vodka', 'Outros', 'Cerveja', 'Refrigerante', 'Energético',
+    'Refresco em Pó', 'Geladeiras', 'Água e Água de Coco', 'Isotônicos'
+];
+
+let currentUser = null;
+let dados = JSON.parse(localStorage.getItem('mapeamento_dados')) || {};
+let selectedPhoto = null;
+
+function calcularDiasRestantes(dataUpload) {
+    const data = new Date(dataUpload);
+    const agora = new Date();
+    const dias = Math.floor((agora - data) / (1000 * 60 * 60 * 24));
+    const diasRestantes = 120 - dias;
+    return { dias, diasRestantes, expirado: diasRestantes < 0 };
+}
+
+function getStatusBadge(dataUpload) {
+    if (!dataUpload) return { texto: 'Sem foto', classe: 'status-expired' };
+    
+    const { diasRestantes, expirado } = calcularDiasRestantes(dataUpload);
+    
+    if (expirado) {
+        return { texto: '❌ Expirado', classe: 'status-expired' };
+    } else if (diasRestantes < 30) {
+        return { texto: `⚠️ ${diasRestantes}d`, classe: 'status-warning' };
+    } else {
+        return { texto: `✅ OK`, classe: 'status-ok' };
+    }
+}
+
+function render() {
+    const app = document.getElementById('app');
+    
+    if (!currentUser) {
+        showLogin(app);
+    } else if (currentUser.isAdmin) {
+        showAdmin(app);
+    } else {
+        showLoja(app);
+    }
+}
+
+function showLogin(app) {
+    app.innerHTML = `
+        <div class="login-container">
+            <div class="login-box">
+                <h1>🏪 Mapeamento Lojas</h1>
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>Usuário</label>
+                        <select id="usuario" required>
+                            <option value="">Selecione</option>
+                            <option value="admin">Admin (Gerencial)</option>
+                            ${LOJAS.map((_, i) => `<option value="loja${i + 1}">Loja ${i + 1}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Senha</label>
+                        <input type="password" id="senha" required placeholder="Digite sua senha">
+                    </div>
+                    <button type="submit" class="login-btn">Entrar</button>
+                </form>
+            </div>
+        </div>
+    `;
+}
+
+function handleLogin(e) {
+    e.preventDefault();
+    const usuario = document.getElementById('usuario').value;
+    const senha = document.getElementById('senha').value;
+    
+    const CREDENCIAIS = {
+        'admin': { senha: 'admin123', loja: null },
+        ...LOJAS.reduce((acc, loja, idx) => {
+            acc[`loja${idx + 1}`] = { senha: `loja${idx + 1}`, loja: loja };
+            return acc;
+        }, {})
+    };
+    
+    if (CREDENCIAIS[usuario] && CREDENCIAIS[usuario].senha === senha) {
+        currentUser = {
+            usuario,
+            isAdmin: usuario === 'admin',
+            loja: CREDENCIAIS[usuario].loja
+        };
+        render();
+    } else {
+        alert('Usuário ou senha incorretos');
+    }
+}
+
+function showAdmin(app) {
+    app.innerHTML = `
+        <div class="app-container">
+            <div class="app-header">
+                <h1>🏪 Painel Administrativo</h1>
+                <div class="user-info">
+                    <span>👤 Admin</span>
+                    <button class="logout-btn" onclick="handleLogout()">Sair</button>
+                </div>
+            </div>
+            <div class="app-content">
+                <div class="admin-panel">
+                    <h2 style="margin-bottom: 20px;">📊 Status de Todas as Lojas</h2>
+                    <div class="lojas-grid">
+                        ${LOJAS.map(loja => `
+                            <div class="loja-card">
+                                <h3 class="loja-title">${loja}</h3>
+                                <div class="categorias-list">
+                                    ${CATEGORIAS.map(cat => {
+                                        const fotoData = dados[loja]?.[cat];
+                                        const status = getStatusBadge(fotoData?.data);
+                                        return `
+                                            <div class="categoria-item" onclick="viewPhoto('${loja.replace(/'/g, "\\'")}', '${cat.replace(/'/g, "\\'")}')">
+                                                <span class="categoria-name">${cat}</span>
+                                                <span class="status-badge ${status.classe}">${status.texto}</span>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal" id="photoModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle"></h2>
+                    <button class="close-btn" onclick="closePhoto()">×</button>
+                </div>
+                <div id="photoContent"></div>
+            </div>
+        </div>
+    `;
+}
+
+function showLoja(app) {
+    app.innerHTML = `
+        <div class="app-container">
+            <div class="app-header">
+                <h1>🏪 ${currentUser.loja}</h1>
+                <div class="user-info">
+                    <span>📍 ${currentUser.loja}</span>
+                    <button class="logout-btn" onclick="handleLogout()">Sair</button>
+                </div>
+            </div>
+            <div class="app-content">
+                <div class="admin-panel" style="max-width: 600px; margin: 0 auto;">
+                    <h2 style="margin-bottom: 20px;">📷 Enviar Fotos</h2>
+                    <p style="margin-bottom: 20px; color: #666; font-size: 14px;">Tire fotos das categorias. Válidas por 4 meses.</p>
+                    <div id="successMessage"></div>
+                    <div class="categorias-list">
+                        ${CATEGORIAS.map(cat => {
+                            const fotoData = dados[currentUser.loja]?.[cat];
+                            const status = getStatusBadge(fotoData?.data);
+                            return `
+                                <div class="upload-section">
+                                    <label class="upload-label">${cat}</label>
+                                    ${fotoData ? `
+                                        <img src="${fotoData.foto}" alt="${cat}" style="max-width: 100%; max-height: 150px; border-radius: 6px; margin-bottom: 10px;">
+                                        <div style="font-size: 12px; color: #999; margin-bottom: 8px;">
+                                            Enviada: ${new Date(fotoData.data).toLocaleDateString('pt-BR')}
+                                        </div>
+                                        <span class="status-badge ${status.classe}">${status.texto}</span>
+                                    ` : ''}
+                                    <label for="upload-${cat}" class="upload-btn" style="display: block; text-align: center; margin-top: 10px;">
+                                        📸 ${fotoData ? 'Atualizar' : 'Enviar'} Foto
+                                    </label>
+                                    <input type="file" id="upload-${cat}" class="file-input" accept="image/*" onchange="handleUpload('${cat}', event)">
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function handleUpload(categoria, event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            if (!dados[currentUser.loja]) dados[currentUser.loja] = {};
+            dados[currentUser.loja][categoria] = {
+                foto: e.target.result,
+                data: new Date().toISOString(),
+                nomeArquivo: file.name
+            };
+            localStorage.setItem('mapeamento_dados', JSON.stringify(dados));
+            render();
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function viewPhoto(loja, categoria) {
+    const fotoData = dados[loja]?.[categoria];
+    const modal = document.getElementById('photoModal');
+    const title = document.getElementById('modalTitle');
+    const content = document.getElementById('photoContent');
+
+    title.textContent = categoria;
+    
+    if (fotoData) {
+        const status = getStatusBadge(fotoData.data);
+        content.innerHTML = `
+            <div class="photo-display">
+                <img src="${fotoData.foto}" alt="${categoria}">
+            </div>
+            <div class="photo-info">
+                <p><strong>Loja:</strong> ${loja}</p>
+                <p><strong>Enviada:</strong> ${new Date(fotoData.data).toLocaleDateString('pt-BR')}</p>
+                <p><strong>Status:</strong> <span class="status-badge ${status.classe}">${status.texto}</span></p>
+            </div>
+        `;
+    } else {
+        content.innerHTML = '<div class="no-photo">Nenhuma foto enviada</div>';
+    }
+
+    modal.classList.add('active');
+    modal.onclick = () => closePhoto();
+    document.querySelector('.modal-content').onclick = (e) => e.stopPropagation();
+}
+
+function closePhoto() {
+    document.getElementById('photoModal').classList.remove('active');
+}
+
+function handleLogout() {
+    currentUser = null;
+    render();
+}
+
+render();
+</script>
+
+</body>
+</html>
