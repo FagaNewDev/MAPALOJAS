@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapeamento Lojas - Panelão Supermercados</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-box h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .login-btn:hover {
+            background: #764ba2;
+        }
+
+        .app-container {
+            min-height: 100vh;
+            background: #f5f5f5;
+        }
+
+        .app-header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .app-header h1 {
+            color: #667eea;
+            font-size: 24px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 14px;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .app-content {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .admin-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .lojas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .loja-card {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .loja-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            background: #667eea;
+            padding: 15px;
+            margin: 0;
+        }
+
+        .categorias-list {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .categoria-item {
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .categoria-name {
+            font-weight: 500;
+            font-size: 13px;
+            flex: 1;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .status-ok {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-expired {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .photo-display {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .photo-display img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+        }
+
+        .photo-info {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+
+        .photo-history {
+            margin-top: 20px;
+            border-top: 2px solid #ddd;
+            padding-top: 20px;
+        }
+
+        .history-item {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .history-item:hover {
+            background: #f0f0f0;
+        }
+
+        .upload-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 2px dashed #ddd;
+        }
+
+        .upload-label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .upload-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .lojas-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .app-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .login-box {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+const LOJAS = [
+    'Loja 01 - Bauru', 'Loja 02 - Bauru', 'Loja 03 - Agudos',
+    'Loja 04 - Jaú', 'Loja 05 - Botucatu', 'Loja 06 - Lençóis Paulista',
+    'Loja 07 - Duartina', 'Loja 08 - São Manoel', 'Loja 09 - Bauru',
+    'Loja 10 - Agudos', 'Loja 11 - Jaú', 'Loja 12 - Botucatu',
+    'Loja 13 - Lençóis Paulista'
+];
+
+const CATEGORIAS = [
+    'Suco', 'Bebida Quente', 'Bebida Mista', 'Vinhos', 'Espum./Sidra/Sazonal',
+    'Vodka', 'Outros', 'Cerveja', 'Refrigerante', 'Energético',
+    'Refresco em Pó', 'Geladeiras', 'Água e Água de Coco', 'Isotônicos'
+];
+
+const firebaseConfig = {
+    apiKey: "AIzaSyB_IeiGG2HYmnfNiZBKn7Vu3dHwn-XYXu0",
+    authDomain: "mapa-lojas-85a3b.firebaseapp.com",
+    projectId: "mapa-lojas-85a3b",
+    storageBucket: "mapa-lojas-85a3b.firebasestorage.app",
+    messagingSenderId: "219971279359",
+    appId: "1:219971279359:web:46fa0dcef7d76e305b2fca",
+    measurementId: "G-HD0978G2NK"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+let currentUser = null;
+
+function render() {
+    const app = document.getElementById('app');
+    
+    if (!currentUser) {
+        showLogin(app);
+    } else if (currentUser.isAdmin) {
+        showAdmin(app);
+    } else {
+        showLoja(app);
+    }
+}
+
+function showLogin(app) {
+    app.innerHTML = `
+        <div class="login-container">
+            <div class="login-box">
+                <h1>🏪 Mapeamento Lojas</h1>
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>Usuário</label>
+                        <select id="usuario" required>
+                            <option value="">Selecione</option>
+                            <option value="admin">Admin (Gerencial)</option>
+                            ${LOJAS.map((_, i) => `<option value="loja${i + 1}">Loja ${i + 1}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Senha</label>
+                        <input type="password" id="senha" required placeholder="Digite sua senha">
+                    </div>
+                    <button type="submit" class="login-btn">Entrar</button>
+                </form>
+            </div>
+        </div>
+    `;
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    const usuario = document.getElementById('usuario').value;
+    const senha = document.getElementById('senha').value;
+    
+    const CREDENCIAIS = {
+        'admin': { senha: 'admin123', loja: null },
+        ...LOJAS.reduce((acc, loja, idx) => {
+            acc[`loja${idx + 1}`] = { senha: `loja${idx + 1}`, loja: loja };
+            return acc;
+        }, {})
+    };
+    
+    if (CREDENCIAIS[usuario] && CREDENCIAIS[usuario].senha === senha) {
+        currentUser = {
+            usuario,
+            isAdmin: usuario === 'admin',
+            loja: CREDENCIAIS[usuario].loja
+        };
+        render();
+    } else {
+        alert('Usuário ou senha incorretos');
+    }
+}
+
+async function showAdmin(app) {
+    app.innerHTML = `
+        <div class="app-container">
+            <div class="app-header">
+                <h1>🏪 Painel Administrativo</h1>
+                <div class="user-info">
+                    <span>👤 Admin</span>
+                    <button class="logout-btn" onclick="handleLogout()">Sair</button>
+                </div>
+            </div>
+            <div class="app-content">
+                <div class="admin-panel">
+                    <h2 style="margin-bottom: 20px;">📊 Status de Todas as Lojas</h2>
+                    <div class="lojas-grid" id="lojas-grid">
+                        <div class="loading">Carregando...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal" id="photoModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle"></h2>
+                    <button class="close-btn" onclick="closePhoto()">×</button>
+                </div>
+                <div id="photoContent"></div>
+            </div>
+        </div>
+    `;
+
+    // Carregar dados
+    const grid = document.getElementById('lojas-grid');
+    grid.innerHTML = '';
+
+    for (const loja of LOJAS) {
+        const card = document.createElement('div');
+        card.className = 'loja-card';
+        
+        let html = `<h3 class="loja-title">${loja}</h3><div class="categorias-list">`;
+        
+        for (const cat of CATEGORIAS) {
+            const docRef = db.collection('lojas').doc(loja).collection('categorias').doc(cat);
+            const doc = await docRef.get();
+            
+            let status = { texto: 'Sem foto', classe: 'status-expired' };
+            if (doc.exists) {
+                const data = doc.data();
+                if (data.dataUltimaAtualizacao) {
+                    const dias = Math.floor((Date.now() - data.dataUltimaAtualizacao) / (1000 * 60 * 60 * 24));
+                    const diasRestantes = 120 - dias;
+                    
+                    if (diasRestantes < 0) {
+                        status = { texto: '❌ Expirado', classe: 'status-expired' };
+                    } else if (diasRestantes < 30) {
+                        status = { texto: `⚠️ ${diasRestantes}d`, classe: 'status-warning' };
+                    } else {
+                        status = { texto: '✅ OK', classe: 'status-ok' };
+                    }
+                }
+            }
+            
+            html += `
+                <div class="categoria-item" onclick="viewPhotoAdmin('${loja.replace(/'/g, "\\'")}', '${cat.replace(/'/g, "\\'")}')">
+                    <span class="categoria-name">${cat}</span>
+                    <span class="status-badge ${status.classe}">${status.texto}</span>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        card.innerHTML = html;
+        grid.appendChild(card);
+    }
+}
+
+async function viewPhotoAdmin(loja, categoria) {
+    const modal = document.getElementById('photoModal');
+    const title = document.getElementById('modalTitle');
+    const content = document.getElementById('photoContent');
+
+    title.textContent = categoria;
+    content.innerHTML = '<div class="loading">Carregando...</div>';
+    
+    try {
+        const docRef = db.collection('lojas').doc(loja).collection('categorias').doc(categoria);
+        const doc = await docRef.get();
+        
+        if (doc.exists) {
+            const data = doc.data();
+            let html = `
+                <div class="photo-display">
+                    <img src="${data.urlFoto}" alt="${categoria}">
+                </div>
+                <div class="photo-info">
+                    <p><strong>Loja:</strong> ${loja}</p>
+                    <p><strong>Enviada:</strong> ${new Date(data.dataUltimaAtualizacao).toLocaleDateString('pt-BR')}</p>
+                </div>
+            `;
+            
+            if (data.historico && data.historico.length > 0) {
+                html += '<div class="photo-history"><h3>📜 Histórico</h3>';
+                data.historico.forEach((item, idx) => {
+                    html += `
+                        <div class="history-item" onclick="viewHistoryPhoto('${item.url}')">
+                            ${new Date(item.data).toLocaleDateString('pt-BR')} - ${new Date(item.data).toLocaleTimeString('pt-BR')}
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+            
+            content.innerHTML = html;
+        } else {
+            content.innerHTML = '<div style="padding: 30px; text-align: center; color: #999;">Nenhuma foto enviada</div>';
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        content.innerHTML = '<div style="color: red;">Erro ao carregar foto</div>';
+    }
+
+    modal.classList.add('active');
+}
+
+function viewHistoryPhoto(url) {
+    const content = document.getElementById('photoContent');
+    content.innerHTML = `
+        <div class="photo-display">
+            <img src="${url}" alt="Histórico">
+        </div>
+        <button onclick="showAdmin(document.getElementById('app'))" style="margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer;">Voltar</button>
+    `;
+}
+
+function closePhoto() {
+    document.getElementById('photoModal').classList.remove('active');
+}
+
+async function showLoja(app) {
+    app.innerHTML = `
+        <div class="app-container">
+            <div class="app-header">
+                <h1>🏪 ${currentUser.loja}</h1>
+                <div class="user-info">
+                    <span>📍 ${currentUser.loja}</span>
+                    <button class="logout-btn" onclick="handleLogout()">Sair</button>
+                </div>
+            </div>
+            <div class="app-content">
+                <div class="admin-panel" style="max-width: 600px; margin: 0 auto;">
+                    <h2 style="margin-bottom: 20px;">📷 Enviar Fotos</h2>
+                    <p style="margin-bottom: 20px; color: #666; font-size: 14px;">Tire fotos das categorias. Válidas por 4 meses.</p>
+                    <div id="upload-container"></div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const container = document.getElementById('upload-container');
+    
+    for (const cat of CATEGORIAS) {
+        const section = document.createElement('div');
+        section.className = 'upload-section';
+        
+        let html = `<label class="upload-label">${cat}</label>`;
+        
+        try {
+            const docRef = db.collection('lojas').doc(currentUser.loja).collection('categorias').doc(cat);
+            const doc = await docRef.get();
+            
+            if (doc.exists) {
+                const data = doc.data();
+                html += `
+                    <img src="${data.urlFoto}" alt="${cat}" style="max-width: 100%; max-height: 150px; border-radius: 6px; margin-bottom: 10px;">
+                    <div style="font-size: 12px; color: #999; margin-bottom: 8px;">
+                        Enviada: ${new Date(data.dataUltimaAtualizacao).toLocaleDateString('pt-BR')}
+                    </div>
+                `;
+            }
+        } catch (e) {
+            console.log('Primeiro upload para', cat);
+        }
+        
+        html += `
+            <label for="upload-${cat}" class="upload-btn" style="display: block; text-align: center; margin-top: 10px;">
+                📸 Enviar Foto
+            </label>
+            <input type="file" id="upload-${cat}" class="file-input" accept="image/*" onchange="handleUpload('${cat}', event)">
+        `;
+        
+        section.innerHTML = html;
+        container.appendChild(section);
+    }
+}
+
+async function handleUpload(categoria, event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const lojaPath = currentUser.loja;
+    const timestamp = Date.now();
+    const filename = `${lojaPath}/${categoria}/${timestamp}`;
+    
+    try {
+        // Upload da foto
+        const ref = storage.ref(filename);
+        await ref.put(file);
+        const url = await ref.getDownloadURL();
+        
+        // Obter documento anterior (se existir)
+        const docRef = db.collection('lojas').doc(lojaPath).collection('categorias').doc(categoria);
+        const doc = await docRef.get();
+        
+        let historico = [];
+        if (doc.exists) {
+            const dados = doc.data();
+            historico = dados.historico || [];
+            // Adicionar foto anterior ao histórico
+            if (dados.urlFoto) {
+                historico.push({
+                    url: dados.urlFoto,
+                    data: dados.dataUltimaAtualizacao
+                });
+            }
+        }
+        
+        // Salvar nova foto
+        await docRef.set({
+            urlFoto: url,
+            dataUltimaAtualizacao: timestamp,
+            nomeArquivo: file.name,
+            historico: historico
+        });
+        
+        alert('✅ Foto enviada com sucesso!');
+        showLoja(document.getElementById('app'));
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('❌ Erro ao enviar foto: ' + error.message);
+    }
+}
+
+function handleLogout() {
+    currentUser = null;
+    render();
+}
+
+render();
+</script>
+
+</body>
+</html>
